@@ -32,26 +32,28 @@ export class GamePageComponent implements OnInit {
     const clickedPion = this.board[row][col];
     if (clickedPion.player === 1 || clickedPion.player === 2) {
       this.highlightedPositions = [];
-      this.highlightedJump = [];
-  
       const adjacentPositions = [
-        { newRow: row - 1, newCol: col }, 
-        { newRow: row - 1, newCol: col + 1 }, 
-        { newRow: row + 1, newCol: col + 1 }, 
-        { newRow: row - 1, newCol: col - 1 }, 
-        { newRow: row + 1, newCol: col - 1 }, 
-        { newRow: row + 1, newCol: col }, 
-        { newRow: row, newCol: col - 1 }, 
-        { newRow: row, newCol: col + 1 }
+        { newRow: row - 1, newCol: col }, // Case au-dessus
+        { newRow: row - 1, newCol: col + 1 }, // Case latéral haut droit 
+        { newRow: row + 1, newCol: col + 1 }, // Case latéral bas droit
+        { newRow: row - 1, newCol: col - 1 }, // Case latéral haut droit 
+        { newRow: row + 1, newCol: col - 1 }, // Case latéral bas droit 
+        { newRow: row + 1, newCol: col }, // Case en dessous
+        { newRow: row, newCol: col - 1 }, // Case à gauche
+        { newRow: row, newCol: col + 1 }, // Case à droite
+        { newRow: row + 2, newCol: col }, // Deux Case en dessous
+        { newRow: row, newCol: col - 2 }, // Deux Case à gauche
+        { newRow: row, newCol: col + 2 }, // Deux Case à droite
+        { newRow: row - 2, newCol: col }, // Deux Case au-dessus
       ];
-  
+
       const jumpPositions = [
-        { newRow: row + 2, newCol: col }, 
-        { newRow: row, newCol: col - 2 }, 
-        { newRow: row, newCol: col + 2 }, 
-        { newRow: row - 2, newCol: col }
-      ];
-  
+        { newRow: row + 2, newCol: col }, // Deux Case en dessous
+        { newRow: row, newCol: col - 2 }, // Deux Case à gauche
+        { newRow: row, newCol: col + 2 }, // Deux Case à droite
+        { newRow: row - 2, newCol: col }, // Deux Case au-dessus
+      ]
+
       for (const pos of adjacentPositions) {
         if (pos.newRow >= 0 && pos.newRow < this.board.length &&
             pos.newCol >= 0 && pos.newCol < this.board[row].length &&
@@ -59,7 +61,7 @@ export class GamePageComponent implements OnInit {
           this.highlightedPositions.push({ row: pos.newRow, col: pos.newCol });
         }
       }
-  
+
       for (const pos of jumpPositions) {
         if (pos.newRow >= 0 && pos.newRow < this.board.length &&
             pos.newCol >= 0 && pos.newCol < this.board[row].length &&

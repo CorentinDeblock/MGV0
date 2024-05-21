@@ -5,10 +5,7 @@
   <tr *ngFor="let row of board; let rowIndex = index">
     <td *ngFor="let pion of row; let colIndex = index"
         (click)="highlightMoves(rowIndex, colIndex)"
-        [ngStyle]="{
-          'background-color': isHighlighted(rowIndex, colIndex) ? 'lightgreen' : pion.color,
-          'border-color': isHighlightedJump(rowIndex, colIndex) ? 'lightgreen' : 'initial'
-        }"
+        [ngStyle]="{'background-color': isHighlighted(rowIndex, colIndex) ? 'lightgreen' : pion.color}"
         (click)="movePion(rowIndex, colIndex)">
       <div>
         {{ pion.player === 1 ? 'P1' : pion.player === 2 ? 'P2' : '' }}
