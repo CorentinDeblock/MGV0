@@ -1,0 +1,18 @@
+<div class="joueur1"> {{ player1PionCount }}</div>
+<div class="joueur2"> {{ player2PionCount }}</div>
+
+<table>
+  <tr *ngFor="let row of board; let rowIndex = index">
+    <td *ngFor="let pion of row; let colIndex = index"
+        (click)="highlightMoves(rowIndex, colIndex)"
+        [ngStyle]="{
+          'background-color': isHighlighted(rowIndex, colIndex) ? 'lightgreen' : pion.color,
+          'border-color': isHighlightedJump(rowIndex, colIndex) ? 'lightgreen' : 'initial'
+        }"
+        (click)="movePion(rowIndex, colIndex)">
+      <div>
+        {{ pion.player === 1 ? 'P1' : pion.player === 2 ? 'P2' : '' }}
+      </div>
+    </td>
+  </tr>
+</table>

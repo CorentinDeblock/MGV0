@@ -1,6 +1,5 @@
 import { bootstrapApplication } from '@angular/platform-browser';
-import { appConfig } from './app/app.config';
-import { AppComponent } from './app/app.component';
+import { GamePageComponent } from './app/Component/game-page/game-page.component'; // Assurez-vous que le chemin est correct
 
-bootstrapApplication(AppComponent, appConfig)
-  .catch((err) => console.error(err));
+bootstrapApplication(GamePageComponent)
+  .catch(err => console.error(err));
