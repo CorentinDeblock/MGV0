@@ -31,3 +31,13 @@ export class Pion {
       this.hasPion = true;
     }
   }
+
+  export class GreyCell extends Pion {
+    constructor() {
+      super();
+      this.player = 3;
+      this.color = "grey";
+      this.hasPion = true;
+    }
+  }
+  

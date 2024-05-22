@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { Pion } from '../Models/pion'; // Chemin correct
+import { Pion } from '../Models/pion';
 
 @Injectable({
   providedIn: 'root'

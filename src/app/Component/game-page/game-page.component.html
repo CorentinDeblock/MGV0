@@ -1,15 +1,14 @@
-<div class="joueur1"> {{ player1PionCount }}</div>
-<div class="joueur2"> {{ player2PionCount }}</div>
+<div class="joueur1">{{ player1PionCount }}</div>
+<div class="joueur2">{{ player2PionCount }}</div>
 
 <table>
   <tr *ngFor="let row of board; let rowIndex = index">
-    <td *ngFor="let pion of row; let colIndex = index"
-        (click)="highlightMoves(rowIndex, colIndex)"
-        [ngStyle]="{'background-color': isHighlighted(rowIndex, colIndex) ? 'lightgreen' : pion.color}"
-        (click)="movePion(rowIndex, colIndex)">
-      <div>
-        {{ pion.player === 1 ? 'P1' : pion.player === 2 ? 'P2' : '' }}
-      </div>
+    <td class="cell"*ngFor="let pion of row; let colIndex = index"
+    [ngStyle]="{
+      'background-color': isHighlighted(rowIndex, colIndex) ? selectedPionColor : pion.color,
+      'border': isHighlightedJump(rowIndex, colIndex) ? '1px solid ' + selectedPionColor : '1px solid black',
+    }"
+        (click)="handleCellClick(rowIndex, colIndex)">
     </td>
   </tr>
 </table>
