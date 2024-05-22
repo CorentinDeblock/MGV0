@@ -118,6 +118,12 @@ export class GamePageComponent implements OnInit {
     const clickedPion = this.board[row][col];
     if (clickedPion.player === 1 || clickedPion.player === 2) {
       this.selectedPionColor = clickedPion.color;
+      if (this.selectedPionColor == "red") {
+        this.selectedPionColor = "coral "
+      }
+      else {
+        this.selectedPionColor = "steelblue "
+      }
       this.highlightedPositions = [];
       this.highlightedJump = [];
       const adjacentPositions = [
