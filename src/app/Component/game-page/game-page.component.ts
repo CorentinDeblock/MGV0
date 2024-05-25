@@ -1,17 +1,17 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, Input, OnInit, input } from '@angular/core';
 import { BoardService } from '../../Services/board.service';
 import { CommonModule } from '@angular/common';
 import { GreyCell, Pion, Player1, Player2 } from '../../Models/pion';
 import { Router } from '@angular/router';
-
-type CellType = Player1 | Player2 | GreyCell;
+import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { SupabaseService } from '../../Services/supabase.service';
 
 @Component({
   selector: 'app-game-page',
   standalone: true,
-  imports: [CommonModule],
+  imports: [CommonModule, ReactiveFormsModule],
   templateUrl: './game-page.component.html',
-  styleUrls: ['./game-page.component.css']
+  styleUrls: ['./game-page.component.css'],
 })
 
 export class GamePageComponent implements OnInit {
@@ -23,95 +23,34 @@ export class GamePageComponent implements OnInit {
   player2PionCount: number = 1;
   winner: string | undefined;
   selectedPionColor: string | null = null;
+  @Input() gameId: string = ""
+
+  connectGameForm = this.formBuilder.group({ gameId: '' });
+  createGameForm = this.formBuilder.group({})
 
   constructor(
     private boardService: BoardService,
-    private router: Router
-  ) {}
-
-  ngOnInit() {
-    this.board = this.boardService.generateBoard(8);
-    this.generateRandomBoard();
-    this.updatePionCounts();
+    private router: Router,
+    private formBuilder: FormBuilder,
+    private supabaseService: SupabaseService
+  ) {
+    
   }
 
-
-
-  generateRandomBoard(): void {
-    const map1: [number, number, CellType][] = [
-      [3, 3, new Player1()],
-      [4, 4, new Player1()],
-      [3, 4, new Player2()],
-      [4, 3, new Player2()],
-      [2, 3, new GreyCell()],
-      [2, 4, new GreyCell()],
-      [3, 2, new GreyCell()],
-      [4, 2, new GreyCell()],
-      [5, 3, new GreyCell()],
-      [5, 4, new GreyCell()],
-      [5, 3, new GreyCell()],
-      [5, 4, new GreyCell()],
-      [5, 3, new GreyCell()],
-      [5, 4, new GreyCell()],
-      [3, 5, new GreyCell()],
-      [4, 5, new GreyCell()],
-  ];
-  
-  const map2: [number, number, CellType][] = [
-      [1, 2, new Player1()],
-      [6, 5, new Player2()],
-      [1, 1, new GreyCell()],
-      [2, 2, new GreyCell()],
-      [2, 4, new GreyCell()],
-      [1, 5, new GreyCell()],
-      [3, 5, new GreyCell()],
-      [4, 2, new GreyCell()],
-      [5, 3, new GreyCell()],
-      [6, 2, new GreyCell()],
-      [5, 5, new GreyCell()],
-      [6, 6, new GreyCell()],
-  ];
-  
-  const map3: [number, number, CellType][] = [
-      [0, 0, new Player1()],
-      [4, 4, new Player1()],
-      [3, 3, new Player2()],
-      [7, 7, new Player2()],
-      [0, 1, new GreyCell()],
-      [1, 1, new GreyCell()],
-      [2, 1, new GreyCell()],
-      [3, 1, new GreyCell()],
-      [4, 1, new GreyCell()],
-      [5, 1, new GreyCell()],
-      [6, 2, new GreyCell()],
-      [6, 3, new GreyCell()],
-      [5, 4, new GreyCell()],
-      [4, 3, new GreyCell()],
-      [2, 3, new GreyCell()],
-      [3, 4, new GreyCell()],
-      [1, 4, new GreyCell()],
-      [1, 5, new GreyCell()],
-      [1, 5, new GreyCell()],
-      [2, 6, new GreyCell()],
-      [3, 6, new GreyCell()],
-      [4, 6, new GreyCell()],
-      [5, 6, new GreyCell()],
-      [6, 6, new GreyCell()],
-      [7, 6, new GreyCell()],
-  ];
-  
-    const maps = [map1, map2, map3];
-    const randomIndex = Math.floor(Math.random() * maps.length);
-    const selectedMap = maps[randomIndex];
-
-    for (let i = 0; i < selectedMap.length; i++) {
-        const item = selectedMap[i];
-        const row = item[0];
-        const col = item[1];
-        const cell = item[2];
-        this.board[row][col] = cell;
+  onGameConnect() {
+    if(this.connectGameForm.value.gameId) {
+      // this.supabaseService.Game.joinGame(this.connectGameForm.value.gameId)
+      this.connectGameForm.reset()
     }
+  }
 
+  onGameCreate() {
+    // this.supabaseService.Game.createGame()
+  }
+
+  ngOnInit() {
+    this.board = this.boardService.generateRandomBoard();
+    this.updatePionCounts();
   }
 
   handleCellClick(row: number, col: number) {

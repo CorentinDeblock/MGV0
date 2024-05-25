@@ -1,3 +1,15 @@
+<div>
+  <form [formGroup]="connectGameForm" (ngSubmit)="onGameConnect()">
+    <label for="gameId">Enter game id : </label>
+    <input name="gameid" formControlName="gameId"/>
+    <button type="submit">Purchase</button>
+  </form>
+  <form [formGroup]="createGameForm" (ngSubmit)="onGameCreate()">
+    <button type="submit">Purchase</button>
+  </form>
+  <p>{{ gameId }}</p>
+</div>
+
 <div class="joueur1">{{ player1PionCount }}</div>
 <div class="joueur2">{{ player2PionCount }}</div>
 
