@@ -1,101 +1,150 @@
-import { Injectable } from '@angular/core';
+import { inject, Injectable, NgZone } from '@angular/core';
 import {
-    createClient,
-    RealtimeChannel,
-    RealtimePostgresChangesFilter,
-    SupabaseClient
-} from '@supabase/supabase-js'
-import { environment } from "../../environments/environment"
-import * as uuid from "uuid"
+  createClient,
+  RealtimeChannel,
+  RealtimePostgresChangesFilter,
+  RealtimePresenceJoinPayload,
+  RealtimePresenceLeavePayload,
+  SupabaseClient,
+} from '@supabase/supabase-js';
+import { environment } from '../../environments/environment';
+import * as uuid from 'uuid';
+import { Pion } from '../Models/pion';
 
-type DatabaseFilter = "*" | "INSERT" | "UPDATE" | "DELETE"
-
-type OnReceiveCallback<Data> = (data?: Data) => void
-type ListenerData<Filter extends { [key:string]: any}, Callback> = {
-    callback: Callback
-} & Filter
-type PresenceFilter = "sync" | "leave" | "join"
-type PresenceData = { key: string, presence: any } | undefined
-
-type Listener<Data> = {
-    "broadcast": ListenerData<{ event: string }, OnReceiveCallback<Data>>,
-    "postgres_changes": ListenerData<RealtimePostgresChangesFilter<"*">, OnReceiveCallback<Data>>,
-    "presence": ListenerData<{ event: PresenceFilter }, (data: PresenceData) => void>
+interface Template {
+  event: {
+    [key: string]: (...args: any) => void;
+  };
 }
 
-class Channel<Data, Event extends string = string>
-{
-    private channel: RealtimeChannel
+class Channel<TemplateDef extends Template> {
+  private channel: RealtimeChannel;
 
-    constructor(channel: RealtimeChannel) {
-        this.channel = channel
-        this.on("presence", {
-            event: "join",
-            callback: () => {
-                console.log("Someone has joined")
-            }
-        }).subscribe()
-    }
+  constructor(channel: RealtimeChannel) {
+    this.channel = channel;
+    this.channel.subscribe();
+  }
 
-    public send(event: Event, data?: Data) {
-        return this.channel.send({
-            event,
-            type: "broadcast",
-            payload: data
-        });
-    }
+  public send<EventData extends keyof TemplateDef['event']>(
+    event: EventData,
+    ...data: Parameters<TemplateDef['event'][EventData]>
+  ) {
+    return this.channel.send({
+      event: event as any,
+      type: 'broadcast',
+      payload: data,
+    });
+  }
 
-    public on<Type extends keyof Listener<Data> & string>(type: Type, payload: Listener<Data>[Type]) {
-        return this.channel.on(type as any, payload, (data) => {
-            payload.callback(data as any)
-        })
-    }
+  public on<EventData extends keyof TemplateDef['event']>(
+    event: EventData,
+    callback: (...args: Parameters<TemplateDef['event'][EventData]>) => void
+  ) {
+    return this.channel.on(
+      'broadcast',
+      { event: event as string },
+      (data: Payload<Parameters<TemplateDef['event'][EventData]>>) => {
+        callback(...data.payload);
+      }
+    );
+  }
+
+  public onJoin(
+    callback: (
+      payload: RealtimePresenceJoinPayload<{ [key: string]: any }>
+    ) => void
+  ) {
+    return this.channel.on('presence', { event: 'join' }, callback);
+  }
+
+  public onLeave(
+    callback: (
+      payload: RealtimePresenceLeavePayload<{ [key: string]: any }>
+    ) => void
+  ) {
+    return this.channel.on('presence', { event: 'leave' }, callback);
+  }
+
+  public onSync(callback: () => void) {
+    return this.channel.on('presence', { event: 'sync' }, callback);
+  }
 }
 
-
-interface GameData
-{
-    id: number,
-    boardIndex: number
+interface GameData {
+  boardIndex: number;
 }
 
-class GameChannel extends Channel<GameData>
-{
-    public id: string;
+interface Payload<T> {
+  payload: T;
+  event: string;
+  type: string;
+}
 
-    constructor(supabase: SupabaseClient, id: string = uuid.v4()) {
-        super(supabase.channel(id))
-        this.id = id
-    }
+export interface GameEventDef extends Template {
+  event: {
+    'request-map': () => void;
+    'respond-map': (data: GameData) => void;
+    'move-pawn': (
+      row: number,
+      col: number,
+      newRow: number,
+      newCol: number,
+      pawn: Pion
+    ) => void;
+  };
+}
+
+export class GameChannel extends Channel<GameEventDef> {
+  public id: string;
+
+  constructor(supabase: SupabaseClient, id: string = uuid.v4()) {
+    super(supabase.channel(id));
+    this.id = id;
+  }
 }
 
 class Game {
-    private supabase : SupabaseClient
+  private supabase: SupabaseClient;
 
-    constructor(supabase: SupabaseClient) {
-        this.supabase = supabase
-    }
+  constructor(supabase: SupabaseClient) {
+    this.supabase = supabase;
+  }
 
-    createGame() {
-        return new GameChannel(this.supabase)
-    }
+  createGame() {
+    return new GameChannel(this.supabase);
+  }
 
-    joinGame(id: string) {
-        return new GameChannel(this.supabase, id)
-    }
+  joinGame(id: string) {
+    return new GameChannel(this.supabase, id);
+  }
 }
 
 @Injectable({
-    providedIn: 'root',
+  providedIn: 'root',
 })
 export class SupabaseService {
-    private supabase: SupabaseClient
-  
-    public Game: Game
+  private supabase: SupabaseClient;
+  private readonly ngZone = inject(NgZone);
 
-    constructor() {
-      this.supabase = createClient(environment.supabaseUrl, environment.supabaseKey)
-      this.supabase.auth.signInAnonymously()
-      this.Game = new Game(this.supabase)
-    }
+  public Game: Game;
+
+  constructor() {
+    this.supabase = this.ngZone.runOutsideAngular(() =>
+      createClient(environment.supabaseUrl, environment.supabaseKey)
+    );
+    this.Game = new Game(this.supabase);
+  }
+
+  createChannel<TemplateDef extends Template>(name: string) {
+    return new Channel<TemplateDef>(this.supabase.channel(name));
+  }
+
+  createChannelFromTemplate<
+    ChannelTemplate extends Channel<TemplateDef>,
+    TemplateDef extends Template
+  >(
+    ctor: new (supabaseClient: SupabaseClient) => ChannelTemplate
+  ): ChannelTemplate {
+    return new ctor(this.supabase);
+  }
 }

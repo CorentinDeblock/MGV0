@@ -89,6 +89,10 @@ export class BoardService {
   }
 
   generateRandomBoard() {
-    return this.generateBoard(Math.floor(Math.random() * this.maps.length))
+    let id = Math.floor(Math.random() * this.maps.length);
+    return {
+      id,
+      board: this.generateBoard(id)
+    }
   }
 }
