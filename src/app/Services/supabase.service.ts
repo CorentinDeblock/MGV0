@@ -10,6 +10,7 @@ import {
 import { environment } from '../../environments/environment';
 import * as uuid from 'uuid';
 import { Pion } from '../Models/pion';
+import { SelectedPionInfo } from '../Component/game-page/game-page.component';
 
 interface Template {
   event: {
@@ -84,13 +85,7 @@ export interface GameEventDef extends Template {
   event: {
     'request-map': () => void;
     'respond-map': (data: GameData) => void;
-    'move-pawn': (
-      row: number,
-      col: number,
-      newRow: number,
-      newCol: number,
-      pawn: Pion
-    ) => void;
+    'move-pawn': (row: number, col: number, pawn: SelectedPionInfo) => void;
   };
 }
 

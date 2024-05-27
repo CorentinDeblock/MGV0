@@ -7,12 +7,11 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { SupabaseService } from '../../Services/supabase.service';
 import { createClient } from '@supabase/supabase-js';
 
+export type SelectedPionInfo = { row: number; col: number };
 type OnCellClickCallback = (
   row: number,
   col: number,
-  newRow: number,
-  newCol: number,
-  pawn: Pion
+  pawn: SelectedPionInfo
 ) => void;
 
 @Component({
@@ -26,7 +25,6 @@ export class GamePageComponent {
   board: Pion[][] = [];
   highlightedPositions: { row: number; col: number }[] = [];
   highlightedJump: { row: number; col: number }[] = [];
-  selectedPion: { row: number; col: number } | null = null;
   player1PionCount: number = 1;
   player2PionCount: number = 1;
   winner: string | undefined;
@@ -35,7 +33,9 @@ export class GamePageComponent {
   connectGameForm = this.formBuilder.group({ gameId: '' });
   createGameForm = this.formBuilder.group({});
 
+  protected selectedPion: SelectedPionInfo | null = null;
   protected boardId: number;
+
   private onBoardClick = new Array<OnCellClickCallback>();
 
   constructor(
@@ -110,28 +110,34 @@ export class GamePageComponent {
       this.tcheckIfIsLoose();
     } else {
       this.movePion(row, col);
+
+      if (this.selectedPion) {
+        for (let callback of this.onBoardClick) {
+          callback(row, col, this.selectedPion);
+        }
+      }
+
+      this.selectedPion = null;
     }
   }
 
-  movePion(newRow: number, newCol: number) {
-    if (this.selectedPion) {
-      const { row, col } = this.selectedPion;
+  movePion(newRow: number, newCol: number, pawn = this.selectedPion) {
+    if (pawn) {
+      const { row, col } = pawn;
       const clickedPion = this.board[row][col];
+      console.log(clickedPion);
 
-      if (
-        this.highlightedPositions.some(
-          (pos) => pos.row === newRow && pos.col === newCol
-        ) ||
-        this.highlightedJump.some(
-          (pos) => pos.row === newRow && pos.col === newCol
-        )
-      ) {
-        this.updatePawn(row, col, newRow, newCol, clickedPion);
-
-        for (let callback of this.onBoardClick) {
-          callback(row, col, newRow, newCol, this.board[newRow][newCol]);
-        }
-      }
+      this.updatePawn(row, col, newRow, newCol, clickedPion);
+      // if (
+      //   this.highlightedPositions.some(
+      //     (pos) => pos.row === newRow && pos.col === newCol
+      //   ) ||
+      //   this.highlightedJump.some(
+      //     (pos) => pos.row === newRow && pos.col === newCol
+      //   )
+      // ) {
+      //   this.updatePawn(row, col, newRow, newCol, clickedPion);
+      // }
     }
   }
 
@@ -193,7 +199,6 @@ export class GamePageComponent {
     }
     this.highlightedPositions = [];
     this.highlightedJump = [];
-    this.selectedPion = null;
   }
 
   protected setPawn(row: number, col: number, pawn: Pion) {

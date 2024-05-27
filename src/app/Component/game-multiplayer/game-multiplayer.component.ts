@@ -27,13 +27,14 @@ export class GameMultiplayerComponent extends GamePageComponent {
   }
 
   private initGameChannel() {
-    this.onCellClick((row, col, newRow, newCol, pawn) => {
-      this.gameChannel?.send('move-pawn', col, row, newRow, newCol, pawn);
+    this.onCellClick((row, col, selectedPion) => {
+      console.log('Sending move pawn');
+      this.gameChannel?.send('move-pawn', col, row, selectedPion);
     });
 
-    this.gameChannel?.on('move-pawn', (row, col, newRow, newCol, pawn) => {
-      console.log('Updating pawn');
-      this.updatePawn(row, col, newRow, newCol, this.board[row][col]);
+    this.gameChannel?.on('move-pawn', (row, col, selectedPion) => {
+      console.log('Updating pawn', row, col, selectedPion);
+      this.movePion(row, col, selectedPion);
     });
   }
 
