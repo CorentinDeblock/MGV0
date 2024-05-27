@@ -5,6 +5,7 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { GameChannel, SupabaseService } from '../../Services/supabase.service';
 import { GamePageComponent } from '../game-page/game-page.component';
 import { CommonModule } from '@angular/common';
+import { Player1 } from '../../Models/pion';
 
 @Component({
   selector: 'app-game-multiplayer',
@@ -27,14 +28,21 @@ export class GameMultiplayerComponent extends GamePageComponent {
   }
 
   private initGameChannel() {
-    this.onCellClick((row, col, selectedPion) => {
+    this.onCellClick((row, col, newRow, newCol, newPion) => {
       console.log('Sending move pawn');
-      this.gameChannel?.send('move-pawn', col, row, selectedPion);
+      this.gameChannel?.send('move-pawn', col, row, newRow, newCol, newPion);
     });
 
-    this.gameChannel?.on('move-pawn', (row, col, selectedPion) => {
-      console.log('Updating pawn', row, col, selectedPion);
-      this.movePion(row, col, selectedPion);
+    this.gameChannel?.on('move-pawn', (row, col, newRow, newCol, newPion) => {
+      console.log('Updating pawn', {
+        row,
+        col,
+        newRow,
+        newCol,
+        newPion,
+      });
+
+      this.updateBoard(row, col, newRow, newCol, newPion);
     });
   }
 
@@ -46,9 +54,8 @@ export class GameMultiplayerComponent extends GamePageComponent {
       this.connectGameForm.reset();
 
       this.gameChannel.onSync(() => {
-        if (this.gameChannel) {
-          this.gameChannel.send('request-map');
-        }
+        console.log('Connected');
+        this.gameChannel!.send('request-map');
       });
 
       this.gameChannel.on('respond-map', (data) => {

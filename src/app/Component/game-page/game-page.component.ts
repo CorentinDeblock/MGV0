@@ -7,11 +7,13 @@ import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { SupabaseService } from '../../Services/supabase.service';
 import { createClient } from '@supabase/supabase-js';
 
-export type SelectedPionInfo = { row: number; col: number };
-type OnCellClickCallback = (
+export type Position = { row: number; col: number };
+export type OnCellClickCallback = (
   row: number,
   col: number,
-  pawn: SelectedPionInfo
+  newRow: number,
+  newCol: number,
+  pawn: Pion
 ) => void;
 
 @Component({
@@ -23,8 +25,8 @@ type OnCellClickCallback = (
 })
 export class GamePageComponent {
   board: Pion[][] = [];
-  highlightedPositions: { row: number; col: number }[] = [];
-  highlightedJump: { row: number; col: number }[] = [];
+  highlightedPositions: Position[] = [];
+  highlightedJump: Position[] = [];
   player1PionCount: number = 1;
   player2PionCount: number = 1;
   winner: string | undefined;
@@ -33,7 +35,7 @@ export class GamePageComponent {
   connectGameForm = this.formBuilder.group({ gameId: '' });
   createGameForm = this.formBuilder.group({});
 
-  protected selectedPion: SelectedPionInfo | null = null;
+  protected selectedPion: Position | null = null;
   protected boardId: number;
 
   private onBoardClick = new Array<OnCellClickCallback>();
@@ -111,33 +113,23 @@ export class GamePageComponent {
     } else {
       this.movePion(row, col);
 
-      if (this.selectedPion) {
-        for (let callback of this.onBoardClick) {
-          callback(row, col, this.selectedPion);
-        }
-      }
-
       this.selectedPion = null;
+      this.highlightedPositions = [];
+      this.highlightedJump = [];
     }
   }
 
-  movePion(newRow: number, newCol: number, pawn = this.selectedPion) {
-    if (pawn) {
-      const { row, col } = pawn;
+  movePion(newRow: number, newCol: number) {
+    if (this.selectedPion) {
+      const { row, col } = this.selectedPion;
       const clickedPion = this.board[row][col];
-      console.log(clickedPion);
 
-      this.updatePawn(row, col, newRow, newCol, clickedPion);
-      // if (
-      //   this.highlightedPositions.some(
-      //     (pos) => pos.row === newRow && pos.col === newCol
-      //   ) ||
-      //   this.highlightedJump.some(
-      //     (pos) => pos.row === newRow && pos.col === newCol
-      //   )
-      // ) {
-      //   this.updatePawn(row, col, newRow, newCol, clickedPion);
-      // }
+      if (
+        this.isHighlighted(newRow, newCol) ||
+        this.isHighlightedJump(newRow, newCol)
+      ) {
+        this.updatePawn(row, col, newRow, newCol, clickedPion);
+      }
     }
   }
 
@@ -182,23 +174,36 @@ export class GamePageComponent {
     newCol: number,
     clickedPion: Pion
   ) {
-    const isAdjacentMove =
-      Math.abs(newRow - row) <= 1 && Math.abs(newCol - col) <= 1;
-
     if (clickedPion instanceof Player1 || clickedPion instanceof Player2) {
       const newPion =
         clickedPion instanceof Player1 ? new Player1() : new Player2();
-      this.board[newRow][newCol] = newPion;
-      if (!isAdjacentMove) {
-        this.board[row][col] = new Pion();
+
+      for (let callback of this.onBoardClick) {
+        callback(row, col, newRow, newCol, newPion);
       }
 
-      this.checkAndTransformAdjacentPions(newRow, newCol, newPion);
-      this.updatePionCounts();
-      this.tcheckIfIsLoose();
+      this.updateBoard(row, col, newRow, newCol, newPion);
     }
-    this.highlightedPositions = [];
-    this.highlightedJump = [];
+  }
+
+  protected updateBoard(
+    row: number,
+    col: number,
+    newRow: number,
+    newCol: number,
+    newPion: Pion
+  ) {
+    const isAdjacentMove =
+      Math.abs(newRow - row) <= 1 && Math.abs(newCol - col) <= 1;
+
+    this.board[newRow][newCol] = newPion;
+    if (!isAdjacentMove) {
+      this.board[row][col] = new Pion();
+    }
+
+    this.checkAndTransformAdjacentPions(newRow, newCol, newPion);
+    this.updatePionCounts();
+    this.tcheckIfIsLoose();
   }
 
   protected setPawn(row: number, col: number, pawn: Pion) {
